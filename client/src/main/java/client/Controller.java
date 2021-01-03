@@ -16,11 +16,11 @@ import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
@@ -122,7 +122,10 @@ public class Controller implements Initializable {
                             if (str.startsWith("/authok ")) {
                                 nickname = str.split("\\s")[1];
                                 setAuthenticated(true);
+
+                                loadChatHistory(loginField.getText().trim());
                                 break;
+
                             }
 
                             if(str.equals("/end")){
@@ -152,6 +155,7 @@ public class Controller implements Initializable {
                             }
                         } else {
                             textArea.appendText(str + "\n");
+                            chatHistory(loginField.getText().trim());
                         }
                     }
                 } catch (RuntimeException e) {
@@ -295,4 +299,45 @@ public class Controller implements Initializable {
         }
 
     }
+
+    private void chatHistory(String login) throws IOException{
+        try {
+            File history = new File("history_" + login+ ".txt");
+            if (!history.exists()){
+                System.out.println("Создать файл с историей чата.");
+                history.createNewFile();
+            }
+            PrintWriter fileWriter = new PrintWriter(new FileWriter(history, false));
+
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+            bufferedWriter.write(textArea.getText());
+            bufferedWriter.close();
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    private void loadChatHistory(String login) throws IOException {
+        int lastMessage = 100;
+        File history = new File("history_" + login+ ".txt");
+        List<String> historyList = new ArrayList<>();
+        FileInputStream in = new FileInputStream(history);
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
+
+        String temp;
+        while ((temp = bufferedReader.readLine()) != null) {
+            historyList.add(temp);
+        }
+
+        if (historyList.size() > lastMessage) {
+            for (int i = historyList.size() - lastMessage; i <= (historyList.size() - 1); i++) {
+                textArea.appendText(historyList.get(i) + "\n");
+            }
+        } else {
+            for (int i = 0; i < (historyList.size()); i++) {
+                textArea.appendText(historyList.get(i) + "\n");
+            }
+        }
+    }
+
 }
